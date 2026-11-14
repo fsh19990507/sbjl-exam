@@ -10,6 +10,8 @@
   var DATA = window.SBJL_DATA || {};
   var VIEW = document.getElementById('view');
   var STORE_KEY = 'sbjl_state_v1';
+  // 静态资源版本号：每次发布更新，强制浏览器拉取新的 JS/教材，避免旧缓存
+  var ASSET_VER = '20261114-2';
 
   function $(s, r) { return (r || document).querySelector(s); }
   function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
@@ -485,7 +487,7 @@
     if (old) { old.addEventListener('load', cb); return; }
     var s = document.createElement('script');
     s.id = 'bookScript-' + id;
-    s.src = 'data/book-' + id + '.js';
+    s.src = 'data/book-' + id + '.js?v=' + ASSET_VER;
     s.onload = cb;
     s.onerror = function () {
       toast('教材文件加载失败，请检查 data/book-' + id + '.js');
@@ -501,7 +503,7 @@
     var old = document.querySelector('script[data-src="' + src + '"]');
     if (old) { old.addEventListener('load', cb); return; }
     var s = document.createElement('script');
-    s.src = src;
+    s.src = src + (src.indexOf('?') >= 0 ? '&' : '?') + 'v=' + ASSET_VER;
     s.dataset.src = src;
     s.onload = cb;
     s.onerror = function () { toast('数据文件加载失败：' + src); };
