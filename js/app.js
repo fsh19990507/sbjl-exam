@@ -493,6 +493,16 @@
     };
     document.body.appendChild(s);
   }
+  function loadScriptOnce(src, cb) {
+    var old = document.querySelector('script[data-src="' + src + '"]');
+    if (old) { old.addEventListener('load', cb); return; }
+    var s = document.createElement('script');
+    s.src = src;
+    s.dataset.src = src;
+    s.onload = cb;
+    s.onerror = function () { toast('数据文件加载失败：' + src); };
+    document.body.appendChild(s);
+  }
   function renderBook(bid, chId) {
     bid = bid || 'fagui';
     var meta = bookMeta(bid);
@@ -1105,8 +1115,13 @@
       });
     });
 
-    // 个人易错考点（来自用户提供的三份错题表）
-    var mistakes = window.SBJL_DATA.mistakes || [];
+    // 个人易错考点（来自用户提供的三份错题表）；首次进入错题本时按需加载
+    var mistakes = (window.SBJL_DATA && window.SBJL_DATA.mistakes) || [];
+    if (!window.SBJL_DATA || !Array.isArray(window.SBJL_DATA.mistakes)) {
+      loadScriptOnce('data/mistakes.js', function () {
+        if (location.hash.indexOf('#/wrong') === 0) renderWrong();
+      });
+    }
     if (mistakes.length) {
       html += '<div class="section-title">我的易错考点 · ' + mistakes.length + ' 条</div>' +
         '<div class="card card-pad"><div class="small muted" style="margin-bottom:10px">整理自你提供的《法规错题》《质量错题》《项目管理错题》三份表格，按“错误原因 + 概括要点”复习。</div>' +
@@ -1453,4 +1468,19 @@
   });
   renderTopCountdown();
   route();
+
+  // 空闲时预取最近阅读的教材，减少首次打开教材的等待
+  (function prefetchBook() {
+    var conn = navigator.connection || {};
+    if (conn.saveData) return;
+    if (conn.effectiveType && /(^|-)2g$/.test(conn.effectiveType)) return;
+    var bid = null;
+    for (var k in S.bookLast) { if (Object.prototype.hasOwnProperty.call(S.bookLast, k)) { bid = k; break; } }
+    bid = bid || 'fagui';
+    var run = function () {
+      if (!(window.SBJL_BOOKS && window.SBJL_BOOKS[bid])) loadBook(bid, function () {});
+    };
+    if ('requestIdleCallback' in window) requestIdleCallback(run, { timeout: 5000 });
+    else setTimeout(run, 3000);
+  })();
 })();
