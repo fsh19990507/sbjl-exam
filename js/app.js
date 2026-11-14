@@ -167,7 +167,11 @@
     switch (page) {
       case 'plan': renderPlan(); break;
       case 'method': renderMethod(); break;
-      case 'learn': parts[1] ? renderChapter(parts[1], parts[2]) : renderLearn(parts[1]); break;
+      case 'learn':
+        // #/learn/科目 显示该科目章节目录；#/learn/科目/章节 才进入章节详情
+        if (parts[2]) renderChapter(parts[1], parts[2]);
+        else renderLearn(parts[1]);
+        break;
       case 'book': renderBook(parts[1], parts[2]); break;
       case 'practice': renderPractice(parts[1], parts.slice(2).join('/')); break;
       case 'exam': renderExam(parts[1]); break;
